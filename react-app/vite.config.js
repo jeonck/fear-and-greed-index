@@ -5,4 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/fear-and-greed-index/', // Added for GitHub Pages deployment
+  css: {
+    postcss: './postcss.config.js', // Explicitly tell Vite to use this PostCSS config
+  },
 })
