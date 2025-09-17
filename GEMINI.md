@@ -48,8 +48,35 @@ GEMINI.md
 
 - **`vite.config.js` `base` 경로 불일치**: `settings.local.json`의 `projectName`이 실제 GitHub 저장소 이름과 다를 경우, 배포된 페이지가 정상적으로 로드되지 않습니다. **`projectName`이 저장소 이름과 정확히 일치하는지 반드시 확인해야 합니다.**
 - **Vite 정적 파일 경로 오류**: `public` 폴더의 파일을 코드에서 `fetch` 등으로 참조할 때, 배포 환경의 기본 경로(base path)를 고려해야 합니다. `fetch('/data/file.json')` 대신 `fetch(`${import.meta.env.BASE_URL}data/file.json`)`과 같이 Vite의 환경 변수를 사용하여 절대 경로를 만들어주세요.
-- **구식 배포 워크플로우 사용**: `peaceiris/actions-gh-pages`와 같은 액션 대신, GitHub의 공식 `actions/deploy-pages`를 사용하는 최신 워크플로우를 적용하세요. 이 방식은 별도 브랜치 관리가 필요 없으며 더 안정적입니다.
-- **저장소 설정**: 배포 워크플로우 실행 전, 저장소의 **Settings > Pages**에서 "Build and deployment" 소스를 **"GitHub Actions"**로 설정했는지 확인하세요.
+- **Node.js 버전 호환성**: Vite는 특정 Node.js 버전(예: 20.19+ 또는 22.12+)을 요구합니다. `deploy.yml`의 `node-version`이 Vite의 요구 사항을 충족하는지 확인하세요.
+- **GitHub Pages 배포 워크플로우**: `peaceiris/actions-gh-pages`와 같은 구식 액션 대신, **GitHub의 공식 `actions/deploy-pages`를 사용하는 최신 워크플로우를 적용해야 합니다.** 이 방식은 별도 브랜치 관리가 필요 없으며 더 안정적입니다.
+  - **예시 (`.github/workflows/deploy.yml`):**
+    ```yaml
+    jobs:
+      build:
+        # ... (build steps) ...
+        - name: Upload GitHub Pages artifact
+          uses: actions/upload-pages-artifact@v3
+          with:
+            path: ./react-app/dist # 빌드 결과물이 있는 경로
+
+      deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        permissions:
+          pages: write # 필수: GitHub Pages에 쓰기 권한 부여
+          id-token: write # 필수: OIDC 토큰 발급 권한 부여
+        environment:
+          name: github-pages
+          url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+          - name: Deploy to GitHub Pages
+            id: deployment
+            uses: actions/deploy-pages@v4
+    ```
+- **저장소 설정 (매우 중요)**: 배포 워크플로우 실행 전, 다음 설정을 반드시 확인하세요.
+  1.  **Settings > Pages**: "Build and deployment" 소스를 **"GitHub Actions"**로 설정했는지 확인하세요.
+  2.  **Settings > Actions > General**: "Workflow permissions"에서 **"Read and write permissions"**가 선택되어 있는지 확인하세요. 이 권한이 없으면 배포가 실패합니다.
 
 ## 🚀 표준 GitHub Pages 배포 워크플로우 (`.github/workflows/deploy.yml`)
 (내용은 이전과 동일하게 유지)
